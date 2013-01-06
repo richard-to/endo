@@ -1,4 +1,4 @@
-var server = function(config){
+var server = function(config) {
     var express = require('express');    
     var path = require('path');
     var app = express();
@@ -10,7 +10,7 @@ var server = function(config){
 
     app.use(express.static(path.join(__dirname, 'public')));
 
-    app.get('/*', function(req, res){
+    app.get('/*', function(req, res) {
         res.render('index'); 
     });
     return app;
