@@ -20,7 +20,7 @@ define(['backbone'], function(Backbone) {
         var propList = ['title', 'segues'];
         options = options || {};
         this._configureProps(options || {}, propList);
-        this.template = options['template'] || null;
+        this.template = options['template'] || this.template;
         Backbone.View.apply(this, [options]);       
     };
 
@@ -57,20 +57,22 @@ define(['backbone'], function(Backbone) {
         
         // Performs the transition to the next view if there is a
         // navigation controller.
+        //
+        // Modal style segue not implemented yet.
         performSegue: function(identifier) {
             var segue = this.segues[identifier];
-
             if (this.navigationController && segue) {
                 if (_.isObject(segue) && segue.destinationViewController) {
                     segue.style = segue.style || Endo.SEGUE_STYLE_PUSH;
                 } else {
                     segue = {
+                        identifier: identifier,
                         style: Endo.SEGUE_STYLE_PUSH,
                         destinationViewController: segue
                     };
                 }
                 this.prepareSegue(segue);
-                this.navigationController.pushViewController(segue);
+                this.navigationController.pushViewController(segue.destinationViewController);
             }
         },
 
@@ -150,6 +152,7 @@ define(['backbone'], function(Backbone) {
         // Render view controller on top of stack.
         render: function() {
             this.toolbarView.remove();
+            this.$el.html(this.template);
             $('.toolbar', this.el).append(this.toolbarView.render().el);
             $('.view', this.el).append(this.topViewController().render().el);
             return this;
@@ -207,6 +210,9 @@ define(['backbone'], function(Backbone) {
             }
         }
     });
+
+    // Add back the extend method
+    Endo.ViewController.extend = Endo.NavigationViewController.extend = Backbone.View.extend;
 
     return Endo;
 });
