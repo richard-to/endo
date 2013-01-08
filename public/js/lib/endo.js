@@ -119,11 +119,10 @@ define(['backbone'], function(Backbone) {
 
         if (!this.rootViewController) {
             this.rootViewController = this.viewControllers[0];
-            len = this.viewControllers.length;
-            for (var i = 0; i < len; i++) {
-                this.viewControllers[i].parentViewController = this;
-                this.viewControllers[i].navigationController = this;
-            }
+            _.each(this.viewControllers, function(element, index, list) {
+                element.parentViewController = this;
+                element.navigationController = this;
+            }, this);
         } else {
             this.viewControllers = [this.rootViewController];
         }
@@ -203,6 +202,13 @@ define(['backbone'], function(Backbone) {
         popToRootViewController: function() {
             var top;
             if (this.viewControllers.length > 1) {
+                _.each(this.viewControllers, function(element, index, list) {
+                    if (element != this.rootViewController) {
+                        element.parentViewController = null;
+                        element.navigationController = null;
+                    }
+                }, this);
+
                 top = this.topViewController();
                 this.viewControllers = [this.rootViewController];
                 top.remove();
