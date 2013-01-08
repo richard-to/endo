@@ -2,8 +2,6 @@ define(['backbone'], function(Backbone) {
 	
 	var Endo = {};
 
-	// Base View Controller	
-	Endo.ViewController = Backbone.View.extend({
 	// Constants
 	// ---------
 	Endo.SEGUE_STYLE_PUSH = 'push';
@@ -90,30 +88,21 @@ define(['backbone'], function(Backbone) {
 	});
 
 	// Navigation View Controller
-	//
-	// Based on iOS UINavigationViewController
-	//
+	// --------------------------
+
 	// Manage navigating from different views using 
 	// a stack based approach.
 	//
 	// This works best for linear navigation.
-	Endo.NavigationViewController = Endo.ViewController.extend({
-		
-		// Save the root view controller
-		rootViewController: null,
+	//
+	// *Based on iOS UINavigationViewController.*
 
-		// Array of view controllers on the stack
-		viewControllers: [],
-		
-		// Delegate to handle the following events
-		//
-		// - willShowViewController(viewController)
-		// - didShowViewController(viewController)
-		//
-		// Not implemented yet. 
-		delegate: null,
+	// Create an Endo.NavigationViewController.
+	Endo.NavigationViewController = function(options) {		
 
-		// Initializes the navigation view
+		options = options || {};
+
+		// Initializes the navigation view.
 		//
 		// Either the rootViewController or viewControllers property must be set in
 		// the options parameter. If both are set, the rootViewController will take 
@@ -121,26 +110,62 @@ define(['backbone'], function(Backbone) {
 		//
 		// If only the viewControllers array is set, then the first view controller 
 		// becomes the rootViewController.
-		initialize: function(options) {
-			this.rootViewController = options.rootViewController || this.rootViewController;
-			this.viewControllers = options.viewControllers || this.viewControllers;
-			if (!this.rootViewController && this.viewControllers.length === 0) {
-				throw new Error("The EndoNavigationViewController needs to be initialized with a root view controller");
-			}
+		var len;
+		this.rootViewController = options.rootViewController || this.rootViewController;
+		this.viewControllers = options.viewControllers || this.viewControllers;
+		if (!this.rootViewController && this.viewControllers.length === 0) {
+			throw new Error("The EndoNavigationViewController needs to be initialized with a root view controller");
+		}
 
-			if (!this.rootViewController) {
-				this.rootViewController = this.viewControllers[0];
-			} else {
-				this.viewControllers = [this.rootViewController];
+		if (!this.rootViewController) {
+			this.rootViewController = this.viewControllers[0];
+			len = this.viewControllers.length;
+			for (var i = 0; i < len; i++) {
+				this.viewControllers[i].parentViewController = this;
+				this.viewControllers[i].navigationController = this;
 			}
-		},
+		} else {
+			this.viewControllers = [this.rootViewController];
+		}
+
+
+		// If no custom toolbar view is specified, create a default one.
+		this.toolbarView = options['toolbarView'] || new Endo.ViewController();
+
+		Endo.ViewController.apply(this, [options]);
+	};
+	
+	_.extend(Endo.NavigationViewController.prototype, Endo.ViewController.prototype, {
+
+		// Default template for navigation controller
+		template: '<div class="toolbar"></div><div class="view"></div>',
 		
-		// Render view controller on top of stack
-		render: function() {
+		// Save the root view controller.
+		rootViewController: null,
 
+		// Toolbar view
+		toolbarView: null,
+
+		// Array of view controllers on the stack.
+		viewControllers: [],
+		
+		// Delegate to handle the following events.
+		//
+		// - willShowViewController(viewController)
+		// - didShowViewController(viewController)
+		//
+		// Not implemented yet. 
+		delegate: null,
+
+		// Render view controller on top of stack.
+		render: function() {
+			this.toolbarView.remove();
+			$('.toolbar', this.el).append(this.toolbarView.render().el);
+			$('.view', this.el).append(this.topViewController().render().el);
+			return this;
 		},
 
-		// Get the view controller at the top of stack
+		// Get the view controller at the top of stack.
 		topViewController: function() {
 			var top = null;
 			var len = this.viewControllers.length;
@@ -150,22 +175,38 @@ define(['backbone'], function(Backbone) {
 			return top;
 		},
 
-		// Add a new view to top of stack
+		// Add a new view to top of stack and render.
 		pushViewController: function(controller) {
+			var top = this.topViewController();
+			controller.parentViewController = this;
+			controller.navigationController = this;
 			this.viewControllers.push(controller);
+			
+			top.remove();
+			this.render();
 		},
 
-		// Remove view from top of stack
+		// Remove view from top of stack and render previous controller.
 		popViewController: function() {
+			var controller;
+			
 			if (this.viewControllers.length > 1) {
-				this.viewControllers.pop();
+				controller = this.viewControllers.pop();
+				controller.parentViewController = null;
+				controller.navigationController = null;
+				controller.remove();
+				this.render();
 			}
 		},
 
-		// Remove all views except the root
+		// Remove all views except the root and render.
 		popToRootViewController: function() {
+			var top;
 			if (this.viewControllers.length > 1) {
+				top = this.topViewController();
 				this.viewControllers = [this.rootViewController];
+				top.remove();
+				this.render();
 			}
 		}
 	});
