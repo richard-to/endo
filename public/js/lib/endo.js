@@ -112,21 +112,15 @@ define(['backbone'], function(Backbone) {
         // becomes the rootViewController.
         var len;
         this.rootViewController = options.rootViewController || this.rootViewController;
-        this.viewControllers = options.viewControllers || this.viewControllers;
-        if (!this.rootViewController && this.viewControllers.length === 0) {
+
+        if (!this.rootViewController) {
             throw new Error("The EndoNavigationViewController needs to be initialized with a root view controller");
         }
 
-        if (!this.rootViewController) {
-            this.rootViewController = this.viewControllers[0];
-            _.each(this.viewControllers, function(element, index, list) {
-                element.parentViewController = this;
-                element.navigationController = this;
-            }, this);
-        } else {
-            this.viewControllers = [this.rootViewController];
-        }
-
+        this.rootViewController.parentViewController = this;
+        this.rootViewController.navigationController = this;
+        this.viewControllers = options.viewControllers || this.viewControllers;
+        this.viewControllers = [this.rootViewController];
 
         // If no custom toolbar view is specified, create a default one.
         this.toolbarView = options['toolbarView'] || new Endo.ViewController();
@@ -144,9 +138,6 @@ define(['backbone'], function(Backbone) {
 
         // Toolbar view
         toolbarView: null,
-
-        // Array of view controllers on the stack.
-        viewControllers: [],
         
         // Delegate to handle the following events.
         //

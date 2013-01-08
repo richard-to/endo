@@ -18,36 +18,14 @@ require(['Endo'], function(Endo) {
         ok(root === nc.topViewController());
     });
 
-    test("Test init view controllers", function() {
-        var root = new Endo.ViewController();
-        var top = new Endo.ViewController();
-        var nc = new Endo.NavigationViewController({
-            viewControllers: [root, top]
-        });
-
-        ok(top === nc.topViewController());
-        ok(root === nc.rootViewController);
-    });
-
-    test("Test init root view controller override", function() {
-        var root = new Endo.ViewController();
-        var top = new Endo.ViewController();
-        var nc = new Endo.NavigationViewController({
-            viewControllers: [root, top],
-            rootViewController: root
-        });
-
-        ok(root === nc.topViewController());
-        ok(root === nc.rootViewController);
-    });
-
     test("Test push/pop", function() {
         var root = new Endo.ViewController();
         var top = new Endo.ViewController();
         var nc = new Endo.NavigationViewController({
-            viewControllers: [root, top]
+            rootViewController: root
         });
 
+        nc.pushViewController(top);
         nc.popViewController();
         ok(root === nc.topViewController());
 
@@ -63,9 +41,11 @@ require(['Endo'], function(Endo) {
         var mid = new Endo.ViewController();
         var top = new Endo.ViewController();
         var nc = new Endo.NavigationViewController({
-            viewControllers: [root, mid, top]
+            rootViewController: root
         });
 
+        nc.pushViewController(mid);
+        nc.pushViewController(top);
         nc.popToRootViewController();
         ok(root === nc.topViewController());
     });
@@ -74,8 +54,10 @@ require(['Endo'], function(Endo) {
         var root = new Endo.ViewController();
         var top = new Endo.ViewController();
         var nc = new Endo.NavigationViewController({
-            viewControllers: [root, top]
+            rootViewController: root
         });
+
+        nc.pushViewController(top);
 
         ok(root.parentViewController === nc);
         ok(root.navigationController === nc);
@@ -87,6 +69,26 @@ require(['Endo'], function(Endo) {
         nc.pushViewController(top);
         ok(top.navigationController === nc);
 
-    });                      
+    }); 
+
+     test("Test render controller", function() {
+        var root = new Endo.ViewController();
+        var top = new Endo.ViewController();
+        var nc = new Endo.NavigationViewController({
+            rootViewController: root
+        });
+
+        nc.pushViewController(top);
+        ok(root.parentViewController === nc);
+        ok(root.navigationController === nc);
+
+        ok(top.navigationController === nc);
+        nc.popViewController();
+        ok(top.navigationController === null);
+
+        nc.pushViewController(top);
+        ok(top.navigationController === nc);
+
+    });                         
 });
 });
