@@ -41,6 +41,7 @@ define(['backbone'], function(Backbone) {
         render: function() {
             this.$el.html(this.template);
             this.$('.button-item').html(this.title);
+            this.delegateEvents();
             return this;       
         },
 
@@ -54,8 +55,13 @@ define(['backbone'], function(Backbone) {
             'click .button-item': '_action'
         },
 
-        // Function to call when action triggered.
-        target: null,
+        // Delegate to handle the following events.
+        //
+        // - willShowViewController(viewController)
+        // - didShowViewController(viewController)
+        //
+        // Not implemented yet. 
+        delegate: null,
 
         // Dispatch click event to target controller function
         // We could use the Backbone.Event listeners, but this is 
@@ -87,6 +93,7 @@ define(['backbone'], function(Backbone) {
             var title = this.title || this.defaultTitle;
             this.$el.html(this.template);
             this.$('.button-item').html(title);
+            this.delegateEvents();
             return this;       
         },
     });
@@ -131,7 +138,7 @@ define(['backbone'], function(Backbone) {
         template: '<div class="back-bar-button-item"></div>' +
             '<div class="left-bar-button-items"></div>' +
             '<div class="title"></div>' +
-            '<div class="right-bar-button-items"></div>"',
+            '<div class="right-bar-button-items"></div>',
 
         // Title that is displayed on navigation bar
         title: null,
@@ -170,6 +177,8 @@ define(['backbone'], function(Backbone) {
                 this.$('.right-bar-button-items').append(element.render().el);
             }, this);
 
+            this.delegateEvents();
+
             return this;
         },
 
@@ -198,6 +207,7 @@ define(['backbone'], function(Backbone) {
         render: function() {
             var top = this.topItem();
             if (top) this.$el.html(top.render().el);
+            this.delegateEvents();            
             return this;
         },
 
@@ -269,6 +279,11 @@ define(['backbone'], function(Backbone) {
     };
 
     _.extend(Endo.ViewController.prototype, Backbone.View.prototype, {
+
+        render: function() {
+            this.delegateEvents();
+            return this;
+        },
 
         // Template for view
         template: null,
@@ -402,6 +417,7 @@ define(['backbone'], function(Backbone) {
             this.$el.html(this.template);
             this.$('.navigation-bar').append(this.navigationBar.render().el);
             this.$('.view').append(this.topViewController().render().el);
+            this.delegateEvents();            
             return this;
         },
 
