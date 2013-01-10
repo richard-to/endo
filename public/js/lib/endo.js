@@ -37,7 +37,8 @@ define(['backbone'], function(Backbone) {
         
         // Render button item.
         render: function() {
-             this.$el.html(this.template);           
+             this.$el.html(this.template);
+             return this.el;       
         },
 
         // Button item template.

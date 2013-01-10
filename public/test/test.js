@@ -5,16 +5,18 @@ require(['Endo'], function(Endo) {
     // -----------------
 
     test("Test button item", function(){
-        var resultSender;
+        var resultSender = null;
         var target = function(sender, event) {
             resultSender = sender;
         };
-        var buttonItem = new Endo.ButtonItem({
-            target: target
-        });
+        var buttonItem = new Endo.ButtonItem();
+
         buttonItem.render();
         buttonItem.$('.button-item').trigger('click');
+        ok(resultSender === null);
 
+        buttonItem.target = target;
+        buttonItem.$('.button-item').trigger('click');
         ok(resultSender === buttonItem);
     });
 
@@ -23,9 +25,9 @@ require(['Endo'], function(Endo) {
 
     test("Test navigation item", function() {
         var testTitleValue = 'Test';
-        backBarButtonItem = new Backbone.View();
-        leftBarButtonItem = new Backbone.View();
-        rightBarButtonItem = new Backbone.View();
+        backBarButtonItem = new Endo.ButtonItem();
+        leftBarButtonItem = new Endo.ButtonItem();
+        rightBarButtonItem = new Endo.ButtonItem();
         var navigationItem = new Endo.NavigationItem({
             title: testTitleValue,
             leftBarButtonItems: leftBarButtonItem,
@@ -33,6 +35,9 @@ require(['Endo'], function(Endo) {
             backBarButtonItem: backBarButtonItem,
             hidebackBarButton: false
         });
+
+        navigationItem.render();
+        
         ok(navigationItem.title === testTitleValue);
         ok(navigationItem.leftBarButtonItems[0] === leftBarButtonItem);
     });
