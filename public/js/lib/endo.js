@@ -65,6 +65,13 @@ define(['backbone'], function(Backbone) {
     // navigation bar items depending on the view
     Endo.NavigationBar = Backbone.View.extend({
 
+        // Render navigation bar at top of stack
+        render: function() {
+            var top = this.topItem();
+            if (top) this.$el.html(top.render().el);
+            return this.el;
+        },
+
         // A stack of navigation items for navigation bar to render.
         items: [],
 
@@ -78,6 +85,7 @@ define(['backbone'], function(Backbone) {
             }
             return topItem;
         },
+
         // Gets the item right below the top item.
         backItem: function() {
             var backItem = null;
@@ -91,12 +99,25 @@ define(['backbone'], function(Backbone) {
 
         // Push a navigation item onto the stack.
         pushNavigationItem: function(navigationItem) {
-            this.items.push(navigationItem);
+            var top;
+            if (_.isObject(navigationItem)) {
+                top = this.topItem();
+                if (top) top.remove();
+                this.items.push(navigationItem);
+            }
         },
 
         // Remove a navigation item from the stack.
         popNavigationItem: function() {
-            this.items.pop();
+            var top = this.items.pop();
+            if (top) top.remove();
+        },
+
+        // Clear all navigation items from stack.
+        clear: function() {
+            var top = this.topItem();
+            if (top) top.remove();
+            this.items = [];
         }
     });
 
@@ -110,14 +131,18 @@ define(['backbone'], function(Backbone) {
 
     // Create an Endo.ViewController.
     Endo.ViewController = function(options) {
-        var propList = ['title', 'segues'];
+        var propList = ['title', 'segues', 'navigationItem'];
         options = options || {};
         this._configureProps(options || {}, propList);
         this.template = options['template'] || this.template;
+        this.navigationItem = this.navigationItem || new Endo.NavigationItem();
         Backbone.View.apply(this, [options]);       
     };
 
     _.extend(Endo.ViewController.prototype, Backbone.View.prototype, {
+
+        // Template for view
+        template: null,
 
         // Title of view.
         //
@@ -131,7 +156,7 @@ define(['backbone'], function(Backbone) {
         // If this is a navigation view controller, we can get a reference.
         navigationController: null,
 
-        // This will be displayed by the navigation bar by the navigation bar controller.
+        // This will be displayed by the navigation bar controller.
         navigationItem: null,
 
         // A dictionary of views we can transition to.
@@ -259,11 +284,14 @@ define(['backbone'], function(Backbone) {
 
         // Add a new view to top of stack and render.
         pushViewController: function(controller) {
+
             var top = this.topViewController();
+
             controller.parentViewController = this;
             controller.navigationController = this;
             this.viewControllers.push(controller);
-            
+            this.navigationBar.pushNavigationItem(top.navigationItem);
+
             top.remove();
             this.render();
         },
@@ -276,6 +304,9 @@ define(['backbone'], function(Backbone) {
                 controller = this.viewControllers.pop();
                 controller.parentViewController = null;
                 controller.navigationController = null;
+
+                this.navigationBar.popNavigationItem();
+
                 controller.remove();
                 this.render();
             }
@@ -295,6 +326,11 @@ define(['backbone'], function(Backbone) {
 
                 top = this.topViewController();
                 this.viewControllers = [this.rootViewController];
+
+                this.navigationBar.clear();
+                this.navigationBar.pushNavigationItem(
+                    this.rootViewController.navigationItem);
+
                 top.remove();
                 this.render();
             }

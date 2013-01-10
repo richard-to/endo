@@ -42,6 +42,14 @@ require(['Endo'], function(Endo) {
     });
 
 
+    // View Controller Tests
+    // ---------------------
+
+    test("Test default navigation item", function() {
+        var view = new Endo.ViewController();
+        ok(view.navigationItem.constructor === Endo.NavigationItem);
+    });
+
 
     // Navigation View Controller Tests
     // --------------------------------
