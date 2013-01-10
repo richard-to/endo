@@ -27,7 +27,9 @@ define(['backbone'], function(Backbone) {
 
     // Create button item.
     Endo.ButtonItem = function(options) {
+        var propList = ['title'];
         options = options || {};
+        this._configureProps(options || {}, propList);
         this.template = options['template'] || this.template;
         this.target = options['target'] || null;
         Backbone.View.apply(this, [options]); 
@@ -37,9 +39,12 @@ define(['backbone'], function(Backbone) {
         
         // Render button item.
         render: function() {
-             this.$el.html(this.template);
-             return this.el;       
+            this.$el.html(this.template);
+            $('.button-item', this.el).html(this.title);
+            return this.el;       
         },
+
+        title: null,
 
         // Button item template.
         template: '<button class="button-item"></button>',
@@ -57,9 +62,34 @@ define(['backbone'], function(Backbone) {
         // only a 1-to-1 action.
         _action: function(event) {
             if (_.isFunction(this.target)) this.target(this, event);
-        }
+        },
+
+        _configureProps: Endo.MixinConfigureProps
     });
 
+    Endo.ButtonItem.extend = Backbone.View.extend;
+    
+
+    // Endo.BackButtonItem
+    // -------------------
+
+    // Custom BackButtonItem with a way to set default title for button if none is supplied.
+    Endo.BackButtonItem = Endo.ButtonItem.extend({
+
+        // Button item template.
+        template: '<button class="back-button-item button-item"></button>',        
+        
+        // Default title to use if none is set
+        defaultTitle: 'Back',
+
+        // Render button item.
+        render: function() {
+            var title = this.title || this.defaultTitle;
+            this.$el.html(this.template);
+            $('.button-item', this.el).html(title);
+            return this.el;       
+        },
+    });
 
     // Endo.NavigtionItem
     // -------------
@@ -72,14 +102,14 @@ define(['backbone'], function(Backbone) {
     // The NavigatioBar mostly manages which NavigationItem
     // should be rendered.
 
-    // Create an Endo.ViewController.
+    // Create an Endo.NavigationItem.
     Endo.NavigationItem = function(options) {
         var propList = ['title', 'leftBarButtonItems', 'rightBarButtonItems', 'backBarButtonItem', 'hideBackButton'];
         options = options || {};
         this._configureProps(options || {}, propList);
 
         if (!_.isObject(this.backBarButtonItem)) {
-            this.backBarButtonItem = new Backbone.View();
+            this.backBarButtonItem = new Endo.BackButtonItem();
         }
 
         if (!_.isArray(this.leftBarButtonItems)) {
@@ -144,9 +174,11 @@ define(['backbone'], function(Backbone) {
         }
     });
 
+    Endo.NavigationItem.extend = Backbone.View.extend;
+
 
     // Endo.NavigationBar
-    // ------------
+    // ------------------
     
     // Used by the NavigationViewController to change the 
     // navigation bar items depending on the view
@@ -293,6 +325,8 @@ define(['backbone'], function(Backbone) {
         _configureProps: Endo.MixinConfigureProps
     });
 
+    Endo.ViewController.extend = Backbone.View.extend;
+
 
     // Navigation View Controller
     // --------------------------
@@ -424,9 +458,8 @@ define(['backbone'], function(Backbone) {
             }
         }
     });
-
-    // Add back the extend method
-    Endo.ViewController.extend = Endo.NavigationViewController.extend = Backbone.View.extend;
+    
+    Endo.NavigationViewController.extend = Backbone.View.extend;
 
     return Endo;
 });

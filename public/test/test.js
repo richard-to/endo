@@ -20,6 +20,7 @@ require(['Endo'], function(Endo) {
         ok(resultSender === buttonItem);
     });
 
+
     // Navigation Item Tests
     // --------------------------------
 
@@ -37,7 +38,7 @@ require(['Endo'], function(Endo) {
         });
 
         navigationItem.render();
-        
+
         ok(navigationItem.title === testTitleValue);
         ok(navigationItem.leftBarButtonItems[0] === leftBarButtonItem);
     });
