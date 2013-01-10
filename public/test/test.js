@@ -1,6 +1,23 @@
 require(['../js/config'], function() {
 require(['Endo'], function(Endo) {
 
+    // Button Item Tests
+    // -----------------
+
+    test("Test button item", function(){
+        var resultSender;
+        var target = function(sender, event) {
+            resultSender = sender;
+        };
+        var buttonItem = new Endo.ButtonItem({
+            target: target
+        });
+        buttonItem.render();
+        buttonItem.$('.button-item').trigger('click');
+
+        ok(resultSender === buttonItem);
+    });
+
     // Navigation Item Tests
     // --------------------------------
 

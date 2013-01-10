@@ -18,7 +18,49 @@ define(['backbone'], function(Backbone) {
     Endo.SEGUE_STYLE_MODAL = 'modal';
 
 
-    // NavigtionItem
+    // Endo.ButtonItem
+    // ---------------
+
+    // ButtonItem's are used by NavigationItems.
+    // ButtonItem's have a one event, which is a click event.
+    // A controller item can hook into this event using the target property.
+
+    // Create button item.
+    Endo.ButtonItem = function(options) {
+        options = options || {};
+        this.template = options['template'] || this.template;
+        this.target = options['target'] || null;
+        Backbone.View.apply(this, [options]); 
+    };
+
+    _.extend(Endo.ButtonItem.prototype, Backbone.View.prototype, {
+        
+        // Render button item.
+        render: function() {
+             this.$el.html(this.template);           
+        },
+
+        // Button item template.
+        template: '<button class="button-item"></button>',
+
+        // Listen for click action on button item.
+        events: {
+            'click .button-item': '_action'
+        },
+
+        // Function to call when action triggered.
+        target: null,
+
+        // Dispatch click event to target controller function
+        // We could use the Backbone.Event listeners, but this is 
+        // only a 1-to-1 action.
+        _action: function(event) {
+            if (_.isFunction(this.target)) this.target(this, event);
+        }
+    });
+
+
+    // Endo.NavigtionItem
     // -------------
 
     // Display by the NavigationBar.
@@ -46,7 +88,7 @@ define(['backbone'], function(Backbone) {
         if (!_.isArray(this.rightBarButtonItems)) {
             this.rightBarButtonItems = [this.rightBarButtonItems];
         }
-        
+
         this.template = options['template'] || this.template;
 
         Backbone.View.apply(this, [options]);       
@@ -99,11 +141,10 @@ define(['backbone'], function(Backbone) {
 
             return this;
         }
-
     });
 
 
-    // NavigationBar
+    // Endo.NavigationBar
     // ------------
     
     // Used by the NavigationViewController to change the 
@@ -250,6 +291,7 @@ define(['backbone'], function(Backbone) {
 
         _configureProps: Endo.MixinConfigureProps
     });
+
 
     // Navigation View Controller
     // --------------------------
