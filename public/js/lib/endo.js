@@ -2,16 +2,109 @@ define(['backbone'], function(Backbone) {
     
     var Endo = {};
 
+    // Mixins
+    // ------
+
+    // Set custom view options to be merged with property list   
+    Endo.MixinConfigureProps = function(options, propList) {
+        if (this.options) options = _.extend({}, _.result(this, 'options'), options);
+        _.extend(this, _.pick(options, propList));
+    };
+
+
     // Constants
     // ---------
     Endo.SEGUE_STYLE_PUSH = 'push';
     Endo.SEGUE_STYLE_MODAL = 'modal';
 
 
+    // NavigtionItem
+    // -------------
+
+    // Display by the NavigationBar.
+    //
+    // The NavigationItem contains the actual buttons
+    // and title to be displayed.
+    // 
+    // The NavigatioBar mostly manages which NavigationItem
+    // should be rendered.
+
+    // Create an Endo.ViewController.
+    Endo.NavigationItem = function(options) {
+        var propList = ['title', 'leftBarButtonItems', 'rightBarButtonItems', 'backBarButtonItem', 'hideBackButton'];
+        options = options || {};
+        this._configureProps(options || {}, propList);
+
+        if (_.isObject(this.leftBarButtonItems)) {
+            this.leftBarButtonItems = [this.leftBarButtonItems];
+        }
+
+        if (_.isObject(this.rightBarButtonItems)) {
+            this.rightBarButtonItems = [this.rightBarButtonItems];
+        }
+        this.template = options['template'] || this.template;
+
+        Backbone.View.apply(this, [options]);       
+    };
+
+    _.extend(Endo.NavigationItem.prototype, Backbone.View.prototype, {
+        template: null,
+        title: null,
+        leftBarButtonItems: [],
+        rightBarButtonItems: [],
+        backBarButtonItem: null,
+        hideBackButton: false,       
+        _configureProps: Endo.MixinConfigureProps
+    });
+
+
+    // NavigationBar
+    // ------------
+    
+    // Used by the NavigationViewController to change the 
+    // navigation bar items depending on the view
+    Endo.NavigationBar = Backbone.View.extend({
+
+        // A stack of navigation items for navigation bar to render.
+        items: [],
+
+        // Get the item current on the top of the item stack.
+        topItem: function() {
+            var topItem = null;
+            var len = this.items.length;
+
+            if (len > 0) {
+                topItem = this.items[len - 1];
+            }
+            return topItem;
+        },
+        // Gets the item right below the top item.
+        backItem: function() {
+            var backItem = null;
+            var len = this.items.length;
+
+            if (len > 1) {
+                backItem = this.items[len - 2];
+            }
+            return backItem;
+        },
+
+        // Push a navigation item onto the stack.
+        pushNavigationItem: function(navigationItem) {
+            this.items.push(navigationItem);
+        },
+
+        // Remove a navigation item from the stack.
+        popNavigationItem: function() {
+            this.items.pop();
+        }
+    });
+
+
     // Endo.ViewController
     // -------------------
     
-    // The view that all other Endo views inherit from.
+    // The view controller that all other Endo views will inherit from.
     //
     // *Based on iOS ViewController.*
 
@@ -37,6 +130,9 @@ define(['backbone'], function(Backbone) {
 
         // If this is a navigation view controller, we can get a reference.
         navigationController: null,
+
+        // This will be displayed by the navigation bar by the navigation bar controller.
+        navigationItem: null,
 
         // A dictionary of views we can transition to.
         // Currently only works with Navigation Controller.
@@ -82,11 +178,7 @@ define(['backbone'], function(Backbone) {
 
         },
 
-        // Set custom view options to be merged with property list
-        _configureProps: function(options, propList) {
-            if (this.options) options = _.extend({}, _.result(this, 'options'), options);
-            _.extend(this, _.pick(options, propList));          
-        }
+        _configureProps: Endo.MixinConfigureProps
     });
 
     // Navigation View Controller
@@ -124,22 +216,19 @@ define(['backbone'], function(Backbone) {
         this.viewControllers = options.viewControllers || this.viewControllers;
         this.viewControllers = [this.rootViewController];
 
-        // If no custom toolbar view is specified, create a default one.
-        this.toolbarView = options['toolbarView'] || new Endo.ViewController();
-
         Endo.ViewController.apply(this, [options]);
     };
     
     _.extend(Endo.NavigationViewController.prototype, Endo.ViewController.prototype, {
 
         // Default template for navigation controller
-        template: '<div class="toolbar"></div><div class="view"></div>',
+        template: '<div class="navigation-bar"></div><div class="view"></div>',
         
         // Save the root view controller.
         rootViewController: null,
 
-        // Toolbar view
-        toolbarView: null,
+        // NavigationBar view
+        navigationBar: new Endo.NavigationBar(),
         
         // Delegate to handle the following events.
         //
@@ -151,9 +240,9 @@ define(['backbone'], function(Backbone) {
 
         // Render view controller on top of stack.
         render: function() {
-            this.toolbarView.remove();
+            this.navigationBar.remove();
             this.$el.html(this.template);
-            $('.toolbar', this.el).append(this.toolbarView.render().el);
+            $('.navigation-bar', this.el).append(this.navigationBar.render().el);
             $('.view', this.el).append(this.topViewController().render().el);
             return this;
         },
@@ -195,6 +284,7 @@ define(['backbone'], function(Backbone) {
         // Remove all views except the root and render.
         popToRootViewController: function() {
             var top;
+
             if (this.viewControllers.length > 1) {
                 _.each(this.viewControllers, function(element, index, list) {
                     if (element != this.rootViewController) {

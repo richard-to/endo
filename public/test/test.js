@@ -1,6 +1,48 @@
 require(['../js/config'], function() {
 require(['Endo'], function(Endo) {
 
+    // Navigation Item Tests
+    // --------------------------------
+
+    test("Test navigation item", function() {
+        var testTitleValue = 'Test';
+        backBarButtonItem = new Backbone.View();
+        leftBarButtonItem = new Backbone.View();
+        rightBarButtonItem = new Backbone.View();
+        var navigationItem = new Endo.NavigationItem({
+            title: testTitleValue,
+            leftBarButtonItems: leftBarButtonItem,
+            rightBarButtonItems: [rightBarButtonItem],
+            backBarButtonItem: backBarButtonItem,
+            hidebackBarButton: false
+        });
+        ok(navigationItem.title === testTitleValue);
+        ok(navigationItem.leftBarButtonItems[0] === leftBarButtonItem);
+    });
+
+
+
+    // Navigation Item Tests
+    // --------------------------------
+    test("Test push/pop top/back navigation item", function() {
+        var navigationItem1 = new Endo.NavigationItem();
+        var navigationItem2 = new Endo.NavigationItem();
+        var navigationBar = new Endo.NavigationBar();
+
+        navigationBar.pushNavigationItem(navigationItem1);
+        ok(navigationItem1 === navigationBar.topItem());
+        ok(null === navigationBar.backItem());
+
+        navigationBar.pushNavigationItem(navigationItem2);
+        ok(navigationItem2 === navigationBar.topItem());
+        ok(navigationItem1 === navigationBar.backItem());
+
+        navigationBar.popNavigationItem();
+        ok(navigationItem1 == navigationBar.topItem());
+    });
+
+
+
     // Navigation View Controller Tests
     // --------------------------------
 
