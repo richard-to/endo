@@ -34,7 +34,7 @@ require(['Endo'], function(Endo) {
             leftBarButtonItems: leftBarButtonItem,
             rightBarButtonItems: [rightBarButtonItem],
             backBarButtonItem: backBarButtonItem,
-            hidebackBarButton: false
+            hideBackButton: false
         });
 
         navigationItem.render();
@@ -176,6 +176,21 @@ require(['Endo'], function(Endo) {
 
         ok(segueIdentifierResult === segueIdentifier);
         ok(segueView === nc.topViewController());
+    });
+
+    test("Test BackButton", function(){
+        
+        var next = new Endo.ViewController();
+        var root = new Endo.ViewController({
+            title: 'Test'
+        });
+
+        var nc = new Endo.NavigationViewController({
+            rootViewController: root
+        });
+        nc.pushViewController(next);
+        next.navigationItem.backBarButtonItem.$('.button-item').trigger('click');
+        ok(root === nc.topViewController());
     });                            
 });
 });

@@ -40,8 +40,8 @@ define(['backbone'], function(Backbone) {
         // Render button item.
         render: function() {
             this.$el.html(this.template);
-            $('.button-item', this.el).html(this.title);
-            return this.el;       
+            this.$('.button-item').html(this.title);
+            return this;       
         },
 
         title: null,
@@ -79,15 +79,15 @@ define(['backbone'], function(Backbone) {
         // Button item template.
         template: '<button class="back-button-item button-item"></button>',        
         
-        // Default title to use if none is set
+        // Default title to use if none is set.
         defaultTitle: 'Back',
 
         // Render button item.
         render: function() {
             var title = this.title || this.defaultTitle;
             this.$el.html(this.template);
-            $('.button-item', this.el).html(title);
-            return this.el;       
+            this.$('.button-item').html(title);
+            return this;       
         },
     });
 
@@ -157,21 +157,31 @@ define(['backbone'], function(Backbone) {
             this.$el.html(this.template);
 
             if (!this.hideBackButton) {
-                $('.back-bar-button-item', this.el).append(this.backBarButtonItem.render().el); 
+                this.$('.back-bar-button-item').append(this.backBarButtonItem.render().el); 
             }  
 
             _.each(this.leftBarButtonItems, function(element, index, list) {
-                $('.left-bar-button-items', this.el).append(element.render().el);
+                this.$('.left-bar-button-items').append(element.render().el);
             }, this);
 
-            $('.title', this.el).append(this.title); 
+            this.$('.title').append(this.title); 
 
             _.each(this.rightBarButtonItems, function(element, index, list) {
-                $('.right-bar-button-items', this.el).append(element.render().el);
+                this.$('.right-bar-button-items').append(element.render().el);
             }, this);
 
             return this;
-        }
+        },
+
+        // Change the title of the BackBarButtonItem.
+        setBackBarButtonItemTitle: function(title) {
+            if (this.backBarButtonItem) this.backBarButtonItem.title = title;
+        },
+
+        // Change the target of the BackBarButtonItem.
+        setBackBarButtonItemTarget: function(target) {
+            if (this.backBarButtonItem) this.backBarButtonItem.target = target;
+        }        
     });
 
     Endo.NavigationItem.extend = Backbone.View.extend;
@@ -254,7 +264,7 @@ define(['backbone'], function(Backbone) {
         options = options || {};
         this._configureProps(options || {}, propList);
         this.template = options['template'] || this.template;
-        this.navigationItem = this.navigationItem || new Endo.NavigationItem();
+        this.navigationItem = this.navigationItem || new Endo.NavigationItem({title:this.title});
         Backbone.View.apply(this, [options]);       
     };
 
@@ -358,6 +368,7 @@ define(['backbone'], function(Backbone) {
             throw new Error("The EndoNavigationViewController needs to be initialized with a root view controller");
         }
 
+        this.rootViewController.navigationItem.hideBackButton = true;
         this.rootViewController.parentViewController = this;
         this.rootViewController.navigationController = this;
         this.viewControllers = options.viewControllers || this.viewControllers;
@@ -389,8 +400,8 @@ define(['backbone'], function(Backbone) {
         render: function() {
             this.navigationBar.remove();
             this.$el.html(this.template);
-            $('.navigation-bar', this.el).append(this.navigationBar.render().el);
-            $('.view', this.el).append(this.topViewController().render().el);
+            this.$('.navigation-bar').append(this.navigationBar.render().el);
+            this.$('.view').append(this.topViewController().render().el);
             return this;
         },
 
@@ -412,7 +423,11 @@ define(['backbone'], function(Backbone) {
             controller.parentViewController = this;
             controller.navigationController = this;
             this.viewControllers.push(controller);
-            this.navigationBar.pushNavigationItem(top.navigationItem);
+
+            controller.navigationItem.setBackBarButtonItemTitle(top.navigationItem.title);
+            controller.navigationItem.setBackBarButtonItemTarget(this._didPressBackButtonItem());
+
+            this.navigationBar.pushNavigationItem(controller.navigationItem);
 
             top.remove();
             this.render();
@@ -455,6 +470,14 @@ define(['backbone'], function(Backbone) {
 
                 top.remove();
                 this.render();
+            }
+        },
+
+        // Not the best thing to do, but needed for keeping scope of function.
+        _didPressBackButtonItem: function() {
+            var view = this;
+            return function(sender, event) {
+                view.popViewController();
             }
         }
     });
