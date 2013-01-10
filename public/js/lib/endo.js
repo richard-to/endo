@@ -35,26 +35,71 @@ define(['backbone'], function(Backbone) {
         options = options || {};
         this._configureProps(options || {}, propList);
 
-        if (_.isObject(this.leftBarButtonItems)) {
+        if (!_.isObject(this.backBarButtonItem)) {
+            this.backBarButtonItem = new Backbone.View();
+        }
+
+        if (!_.isArray(this.leftBarButtonItems)) {
             this.leftBarButtonItems = [this.leftBarButtonItems];
         }
 
-        if (_.isObject(this.rightBarButtonItems)) {
+        if (!_.isArray(this.rightBarButtonItems)) {
             this.rightBarButtonItems = [this.rightBarButtonItems];
         }
+        
         this.template = options['template'] || this.template;
 
         Backbone.View.apply(this, [options]);       
     };
 
     _.extend(Endo.NavigationItem.prototype, Backbone.View.prototype, {
-        template: null,
+        
+        // Template for navigation bar. Still need to define basic template areas
+        template: '<div class="back-bar-button-item"></div>' +
+            '<div class="left-bar-button-items"></div>' +
+            '<div class="title"></div>' +
+            '<div class="right-bar-button-items"></div>"',
+
+        // Title that is displayed on navigation bar
         title: null,
+
+        // Button items displayed to left of title
         leftBarButtonItems: [],
+
+        // Button items displayed to right of title
         rightBarButtonItems: [],
+
+        // Back button displayed on left of title
         backBarButtonItem: null,
-        hideBackButton: false,       
-        _configureProps: Endo.MixinConfigureProps
+
+        // Hide/Show the back button
+        hideBackButton: false,
+
+        // Configure properties
+        _configureProps: Endo.MixinConfigureProps,
+
+        // Render Navigation item
+        render: function() {
+
+            this.$el.html(this.template);
+
+            if (!this.hideBackButton) {
+                $('.back-bar-button-item', this.el).append(this.backBarButtonItem.render().el); 
+            }  
+
+            _.each(this.leftBarButtonItems, function(element, index, list) {
+                $('.left-bar-button-items', this.el).append(element.render().el);
+            }, this);
+
+            $('.title', this.el).append(this.title); 
+
+            _.each(this.rightBarButtonItems, function(element, index, list) {
+                $('.right-bar-button-items', this.el).append(element.render().el);
+            }, this);
+
+            return this;
+        }
+
     });
 
 
@@ -69,7 +114,7 @@ define(['backbone'], function(Backbone) {
         render: function() {
             var top = this.topItem();
             if (top) this.$el.html(top.render().el);
-            return this.el;
+            return this;
         },
 
         // A stack of navigation items for navigation bar to render.
