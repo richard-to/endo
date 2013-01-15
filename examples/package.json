@@ -1,0 +1,16 @@
+{
+    "name": "endo-node-examples",
+    "version": "0.0.1",
+    "description": "Examples using Endo with Node Js",
+    "contributors": [
+        {"name": "Richard To"}
+    ],
+    "dependencies": {
+        "express": "3.0.x",
+        "ejs": "0.8.x"      
+    },
+    "engines": {
+        "node": "0.8.x",
+        "npm": "1.1.x"
+    }
+}
