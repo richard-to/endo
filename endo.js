@@ -1,4 +1,4 @@
-define(['backbone'], function(Backbone) {
+(function(window, undefined) {
     
     var Endo = {};
 
@@ -74,7 +74,7 @@ define(['backbone'], function(Backbone) {
     });
 
     Endo.ButtonItem.extend = Backbone.View.extend;
-    
+
 
     // Endo.BackButtonItem
     // -------------------
@@ -198,7 +198,7 @@ define(['backbone'], function(Backbone) {
 
     // Endo.NavigationBar
     // ------------------
-    
+
     // Used by the NavigationViewController to change the 
     // navigation bar items depending on the view
     Endo.NavigationBar = Backbone.View.extend({
@@ -263,7 +263,7 @@ define(['backbone'], function(Backbone) {
 
     // Endo.ViewController
     // -------------------
-    
+
     // The view controller that all other Endo views will inherit from.
     //
     // *Based on iOS ViewController.*
@@ -300,6 +300,9 @@ define(['backbone'], function(Backbone) {
         // If this is a navigation view controller, we can get a reference.
         navigationController: null,
 
+        // If this is a layout view controller, we can get a reference.
+        layoutViewController: null,
+
         // This will be displayed by the navigation bar controller.
         navigationItem: null,
 
@@ -320,6 +323,36 @@ define(['backbone'], function(Backbone) {
         // }
         segues: {},
         
+        // Set layout view controller.
+        setLayoutViewController: function(layoutViewController) {            
+            // Only set layout controller as parent if no navigation controller.
+            if (this.navigationController == null) {
+                this.parentViewController = layoutViewController;
+            }
+            this.layoutViewController = layoutViewController;
+        },
+
+        // Unset layout view controller.
+        unsetLayoutViewController: function() {            
+            // Only set layout controller as parent if no navigation controller.
+            if (this.navigationController == null) {
+                this.parentViewController = null;
+            }
+            this.layoutViewController = null;
+        },
+
+        // Set navigation view controller.
+        setNavigationViewController: function(navigationViewController) {
+            this.parentViewController = navigationViewController;
+            this.navigationController = navigationViewController;
+        },
+
+        // Unset navigation view controller.
+        unsetNavigationViewController: function() {
+            this.parentViewController = null;
+            this.navigationController = null;
+        },
+
         // Performs the transition to the next view if there is a
         // navigation controller.
         //
@@ -384,14 +417,15 @@ define(['backbone'], function(Backbone) {
         }
 
         this.rootViewController.navigationItem.hideBackButton = true;
-        this.rootViewController.parentViewController = this;
-        this.rootViewController.navigationController = this;
+        this.rootViewController.setNavigationViewController(this);
+        this.rootViewController.setLayoutViewController(this.layoutViewController);
+
         this.viewControllers = options.viewControllers || this.viewControllers;
         this.viewControllers = [this.rootViewController];
 
         Endo.ViewController.apply(this, [options]);
     };
-    
+
     _.extend(Endo.NavigationViewController.prototype, Endo.ViewController.prototype, {
 
         // Default template for navigation controller
@@ -436,8 +470,9 @@ define(['backbone'], function(Backbone) {
 
             var top = this.topViewController();
 
-            controller.parentViewController = this;
-            controller.navigationController = this;
+            controller.setNavigationViewController(this);
+            controller.setLayoutViewController(this.layoutViewController);
+
             this.viewControllers.push(controller);
 
             controller.navigationItem.setBackBarButtonItemTitle(top.navigationItem.title);
@@ -455,9 +490,9 @@ define(['backbone'], function(Backbone) {
             
             if (this.viewControllers.length > 1) {
                 controller = this.viewControllers.pop();
-                controller.parentViewController = null;
-                controller.navigationController = null;
 
+                controller.unsetNavigationViewController();
+                controller.unsetLayoutViewController();
                 this.navigationBar.popNavigationItem();
 
                 controller.remove();
@@ -472,8 +507,8 @@ define(['backbone'], function(Backbone) {
             if (this.viewControllers.length > 1) {
                 _.each(this.viewControllers, function(element, index, list) {
                     if (element != this.rootViewController) {
-                        element.parentViewController = null;
-                        element.navigationController = null;
+                        element.unsetNavigationViewController();
+                        element.unsetLayoutViewController();
                     }
                 }, this);
 
@@ -489,6 +524,26 @@ define(['backbone'], function(Backbone) {
             }
         },
 
+        // Clean up child view controllers as well as itself.
+        remove: function() {
+          this.popToRootViewController();
+          this.rootViewController.remove();
+          
+          this.$el.remove();
+          this.stopListening();
+
+          return this;
+        },
+
+        // Set layout view controller itself and for child controllers.
+        setLayoutViewController: function(layoutViewController) {            
+            this.parentViewController = layoutViewController;
+            this.layoutViewController = layoutViewController;
+            _.each(this.viewControllers, function(element, index, list) {
+                controller.setLayoutViewController(layoutViewController);
+            }, this);
+        },
+
         // Not the best thing to do, but needed for keeping scope of function.
         _didPressBackButtonItem: function() {
             var view = this;
@@ -497,8 +552,79 @@ define(['backbone'], function(Backbone) {
             }
         }
     });
-    
+
     Endo.NavigationViewController.extend = Backbone.View.extend;
 
-    return Endo;
-});
+
+    // Layout View Controller
+    // ----------------------
+
+    // The Layout View Controller basically creates a bunch of divs.
+    // and renders View Controllers in the divs.
+    // This can be useful for a sidebar with a main view for instance.
+    // Layout View Controllers can be nested for more complex layouts.
+
+    // Creates an Endo.LayoutViewController.
+    Endo.LayoutViewController = function(options) {
+        var propList = ['wrapperEl'];
+        options = options || {};
+        this._configureProps(options || {}, propList);
+
+        if (_.isObject(options['layout'])) {
+            this.layout = options['layout'] || {};
+            _.each(this.layout, function(element, index, list) {
+                element.setLayoutViewController(this);
+            }, this);
+        }
+
+        Endo.ViewController.apply(this, [options]);
+    };
+
+    _.extend(Endo.LayoutViewController.prototype, Endo.ViewController.prototype, {
+
+        // Element to wrap child view controllers in.
+        wrapperEl: '<div>',
+
+        // Render layout view controller.
+        render: function() {
+            var div;
+            this.$el.empty();
+
+            _.each(this.layout, function(element, key, list) {
+                div = $(this.wrapperEl);
+                div.addClass(key);
+                div.append(element.render().el);
+                this.$el.append(div);
+            }, this);
+
+            this.delegateEvents();
+            return this;
+        },
+
+        // Layout contains a dictionary of ViewControllers.
+        // Dictionary key defines the class of the wrapper div that the view controller
+        // will be rendered in.
+        layout: {},
+
+        // Clean up child view controllers in layout as well as itself.
+        remove: function() {
+            _.each(this.layout, function(element, index, list) {
+                element.remove();
+            }, this);
+
+          this.$el.remove();
+          this.stopListening();
+
+          return this;
+        }
+    });
+
+    Endo.LayoutViewController.extend = Backbone.View.extend;
+
+    window.Endo = Endo;
+
+    if (typeof define === "function" && define.amd && define.amd.Endo) {
+        define( "endo", [], function () { return Endo; } );
+    }
+
+})(window);
